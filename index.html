@@ -22,6 +22,19 @@
     .panel h2 { font-size: 1.1rem; margin-bottom: 4px; color: #38bdf8; }
     .panel p { font-size: 0.78rem; color: #94a3b8; margin-bottom: 14px; }
     
+    /* Search Bar Styles */
+    .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
+    .search-box input { 
+      flex: 1; padding: 8px 12px; border-radius: 6px; 
+      border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); 
+      color: white; outline: none; font-size: 0.8rem; 
+    }
+    .search-box button { 
+      padding: 8px 12px; border-radius: 6px; border: none; 
+      background: #38bdf8; color: #0f172a; cursor: pointer; font-weight: bold; 
+    }
+    .search-box button:hover { background: #0ea5e9; }
+
     .slider-group { margin-bottom: 12px; }
     .slider-group label { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; margin-bottom: 4px; color: #cbd5e1; }
     .slider-group input { width: 100%; accent-color: #38bdf8; cursor: pointer; }
@@ -40,18 +53,24 @@
 
   <div class="panel">
     <h2>4-Year Land Prospect AI</h2>
-    <p>Click map to fetch live transit & elevation data for valuation.</p>
+    <p>Search a city or click the map for live valuation.</p>
+
+    <!-- NEW: Geocoding Search Bar -->
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="e.g. Jakarta, Tokyo..." onkeydown="if(event.key === 'Enter') searchLocation()">
+      <button onclick="searchLocation()">Search</button>
+    </div>
     
     <div class="slider-group">
-      <label>Transit Impact <span id="val-transit">70%</span></label>
+      <label>Transit Impact <span id="val-transit">70</span></label>
       <input type="range" id="weight-transit" min="0" max="100" value="70">
     </div>
     <div class="slider-group">
-      <label>Commercial Zoning (Est) <span id="val-zoning">80%</span></label>
+      <label>Commercial Zoning (Est) <span id="val-zoning">80</span></label>
       <input type="range" id="weight-zoning" min="0" max="100" value="80">
     </div>
     <div class="slider-group">
-      <label>Population Growth (Est) <span id="val-inflow">65%</span></label>
+      <label>Population Growth (Est) <span id="val-inflow">65</span></label>
       <input type="range" id="weight-inflow" min="0" max="100" value="65">
     </div>
 
@@ -76,36 +95,61 @@
 
     let activeMarker = null;
 
-    // Async function to fetch real environmental and infrastructure data
+    // NEW: Nominatim Geocoding Function
+    async function searchLocation() {
+      const query = document.getElementById('search-input').value;
+      if (!query) return;
+      
+      document.getElementById('search-input').value = "Searching...";
+      
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          map.flyTo([lat, lon], 13);
+          document.getElementById('search-input').value = query; // restore text
+        } else {
+          alert("Location not found. Try a different spelling.");
+          document.getElementById('search-input').value = query;
+        }
+      } catch (error) {
+        alert("Search failed. Check your connection.");
+        document.getElementById('search-input').value = query;
+      }
+    }
+
     async function calculateRealProspect(lat, lng) {
       try {
-        // 1. Fetch Elevation Data (Proxy for flood risk)
         const elRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`);
         const elData = await elRes.json();
         const elevation = elData.elevation[0] || 0;
 
-        // 2. Fetch Transit Data (Overpass API - nodes within 1km)
         const query = `[out:json];node["public_transport"](around:1000, ${lat}, ${lng});out count;`;
         const transitRes = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
         const transitData = await transitRes.json();
         const transitStops = parseInt(transitData.elements[0]?.tags?.nodes) || 0;
 
-        // 3. User Weights
-        const wTransit = parseInt(document.getElementById('weight-transit').value) / 100;
-        const wZoning = parseInt(document.getElementById('weight-zoning').value) / 100;
-        const wInflow = parseInt(document.getElementById('weight-inflow').value) / 100;
-
-        // 4. Algorithm Calculation
-        // Cap transit score at 20 stops nearby for 100% transit score
-        const realTransitScore = Math.min((transitStops / 20) * 100, 100); 
+        // FIXED MATHEMATICS: True Weighted Average
+        const wTransit = parseInt(document.getElementById('weight-transit').value);
+        const wZoning = parseInt(document.getElementById('weight-zoning').value);
+        const wInflow = parseInt(document.getElementById('weight-inflow').value);
         
-        // If elevation is under 5m, heavy penalty (high flood risk by 2030)
+        const totalWeight = wTransit + wZoning + wInflow;
+
+        const transitScore = Math.min((transitStops / 20) * 100, 100); 
+        const zoningScore = 75; // Static estimate fallback
+        const inflowScore = 65; // Static estimate fallback
+
+        // Calculate the weighted average out of 100
+        let baseScore = 0;
+        if (totalWeight > 0) {
+          baseScore = ((transitScore * wTransit) + (zoningScore * wZoning) + (inflowScore * wInflow)) / totalWeight;
+        }
+
         const floodPenalty = elevation < 5 ? 25 : (elevation < 10 ? 10 : 0);
-
-        // Calculate base (using static values for zoning/inflow as fallbacks since we lack global APIs for them)
-        const baseScore = (realTransitScore * wTransit) + (75 * wZoning) + (65 * wInflow);
-        
-        // Final normalized score minus penalties
         const finalScore = Math.max(0, Math.min(Math.round(baseScore - floodPenalty), 98));
 
         return { score: finalScore, elevation, transitStops };
@@ -120,7 +164,6 @@
       const lat = e.latlng.lat.toFixed(4);
       const lng = e.latlng.lng.toFixed(4);
       
-      // Loading State
       document.getElementById('prospect-score').innerText = 'Calc...';
       document.getElementById('prospect-score').style.color = '#94a3b8';
       document.getElementById('location-info').innerText = `Coords: ${lat}, ${lng}`;
@@ -128,10 +171,8 @@
 
       if (activeMarker) map.removeLayer(activeMarker);
 
-      // Fetch Data
       const data = await calculateRealProspect(lat, lng);
 
-      // Update UI
       const badgeColor = data.score > 75 ? '#4ade80' : data.score > 50 ? '#facc15' : '#f87171';
       
       document.getElementById('prospect-score').innerText = data.score + '%';
@@ -148,7 +189,7 @@
     ['transit', 'zoning', 'inflow'].forEach(id => {
       const slider = document.getElementById(`weight-${id}`);
       const label = document.getElementById(`val-${id}`);
-      slider.addEventListener('input', () => label.innerText = slider.value + '%');
+      slider.addEventListener('input', () => label.innerText = slider.value);
     });
   </script>
 </body>
