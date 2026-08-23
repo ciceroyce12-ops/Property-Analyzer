@@ -9,24 +9,23 @@
   
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body, html { height: 100%; width: 100%; overflow: hidden; }
+    body, html { height: 100%; width: 100%; overflow: hidden; background: #000; }
     #map { height: 100vh; width: 100vw; z-index: 1; }
     
     .panel {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.92); color: #f8fafc;
-      padding: 18px; border-radius: 14px; width: 320px; max-width: 90vw;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+      padding: 18px; border-radius: 14px; width: 340px; max-width: 90vw;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.12);
     }
     .panel h2 { font-size: 1.1rem; margin-bottom: 4px; color: #38bdf8; }
-    .panel p { font-size: 0.78rem; color: #94a3b8; margin-bottom: 14px; }
+    .panel p { font-size: 0.78rem; color: #94a3b8; margin-bottom: 14px; line-height: 1.4; }
     
-    /* Search Bar Styles */
     .search-box { display: flex; gap: 8px; margin-bottom: 15px; }
     .search-box input { 
       flex: 1; padding: 8px 12px; border-radius: 6px; 
-      border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); 
+      border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); 
       color: white; outline: none; font-size: 0.8rem; 
     }
     .search-box button { 
@@ -45,32 +44,40 @@
     }
     .stats-card h3 { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
     .score-display { font-size: 2rem; font-weight: 800; color: #4ade80; margin: 2px 0; }
-    .location-details { font-size: 0.75rem; color: #cbd5e1; margin-bottom: 4px; }
-    .live-data { font-size: 0.7rem; color: #facc15; font-weight: bold; }
+    .location-details { font-size: 0.75rem; color: #cbd5e1; margin-bottom: 6px; }
+    
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .metric-badge { background: rgba(0,0,0,0.4); padding: 6px; border-radius: 6px; font-size: 0.7rem; color: #facc15; font-weight: bold; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    
+    /* Legend */
+    .legend { margin-top: 10px; font-size: 0.7rem; color: #94a3b8; display: flex; gap: 10px; justify-content: center; }
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot.transit { background: #60a5fa; box-shadow: 0 0 5px #60a5fa; }
+    .dot.com { background: #facc15; box-shadow: 0 0 5px #facc15; }
   </style>
 </head>
 <body>
 
   <div class="panel">
     <h2>4-Year Land Prospect AI</h2>
-    <p>Search a city or click the map for live valuation.</p>
+    <p>Spatial decay algorithm mapped to live OpenStreetMap nodes & elevation data.</p>
 
-    <!-- NEW: Geocoding Search Bar -->
     <div class="search-box">
       <input type="text" id="search-input" placeholder="e.g. Jakarta, Tokyo..." onkeydown="if(event.key === 'Enter') searchLocation()">
       <button onclick="searchLocation()">Search</button>
     </div>
     
     <div class="slider-group">
-      <label>Transit Impact <span id="val-transit">70</span></label>
+      <label>Transit Weight <span id="val-transit">70</span></label>
       <input type="range" id="weight-transit" min="0" max="100" value="70">
     </div>
     <div class="slider-group">
-      <label>Commercial Zoning (Est) <span id="val-zoning">80</span></label>
+      <label>Commercial Zoning Weight <span id="val-zoning">80</span></label>
       <input type="range" id="weight-zoning" min="0" max="100" value="80">
     </div>
     <div class="slider-group">
-      <label>Population Growth (Est) <span id="val-inflow">65</span></label>
+      <label>Pop. Growth Weight (Static Estimate) <span id="val-inflow">65</span></label>
       <input type="range" id="weight-inflow" min="0" max="100" value="65">
     </div>
 
@@ -78,7 +85,17 @@
       <h3>Appreciation Potential</h3>
       <div class="score-display" id="prospect-score">-- %</div>
       <div class="location-details" id="location-info">Awaiting coordinates...</div>
-      <div class="live-data" id="live-metrics"></div>
+      
+      <div class="metrics-grid">
+        <div class="metric-badge" id="metric-transit">🚉 Transit: --</div>
+        <div class="metric-badge" id="metric-com">🏢 Commercial: --</div>
+        <div class="metric-badge" id="metric-elev" style="grid-column: span 2;">⛰️ Elevation (Flood Risk): --</div>
+      </div>
+
+      <div class="legend">
+        <span><div class="dot transit"></div> Transit Nodes</span>
+        <span><div class="dot com"></div> Comm. Nodes</span>
+      </div>
     </div>
   </div>
 
@@ -86,110 +103,176 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([-6.2088, 106.8456], 11);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      maxZoom: 19
+    // 1. Initialize Map with Satellite Layer
+    const map = L.map('map').setView([-6.2088, 106.8456], 13);
+    
+    // Esri High-Resolution Satellite Tiles (Legal & Free)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+      maxZoom: 18
     }).addTo(map);
 
-    let activeMarker = null;
+    // Layer Group for easy clearing of previous radii/markers
+    let activeLayers = L.layerGroup().addTo(map);
+    let clickTimeout = null;
 
-    // NEW: Nominatim Geocoding Function
+    // Search Geocoder
     async function searchLocation() {
       const query = document.getElementById('search-input').value;
       if (!query) return;
-      
       document.getElementById('search-input').value = "Searching...";
       
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
         const data = await res.json();
-        
         if (data && data.length > 0) {
-          const lat = parseFloat(data[0].lat);
-          const lon = parseFloat(data[0].lon);
-          map.flyTo([lat, lon], 13);
-          document.getElementById('search-input').value = query; // restore text
+          map.flyTo([parseFloat(data[0].lat), parseFloat(data[0].lon)], 14);
+          document.getElementById('search-input').value = query;
         } else {
-          alert("Location not found. Try a different spelling.");
+          alert("Location not found.");
           document.getElementById('search-input').value = query;
         }
       } catch (error) {
-        alert("Search failed. Check your connection.");
+        alert("Search failed.");
         document.getElementById('search-input').value = query;
       }
     }
 
+    // Haversine Distance Calculator (returns kilometers)
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; 
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    // Main AI Fetcher with Distance Decay
     async function calculateRealProspect(lat, lng) {
+      const cacheKey = `${lat},${lng}`;
+      if (sessionStorage.getItem(cacheKey)) {
+        return JSON.parse(sessionStorage.getItem(cacheKey));
+      }
+
       try {
+        // 1. Fetch Elevation
         const elRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`);
         const elData = await elRes.json();
         const elevation = elData.elevation[0] || 0;
 
-        const query = `[out:json];node["public_transport"](around:1000, ${lat}, ${lng});out count;`;
-        const transitRes = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-        const transitData = await transitRes.json();
-        const transitStops = parseInt(transitData.elements[0]?.tags?.nodes) || 0;
+        // 2. Fetch Transit & Commercial Nodes (Optimized query)
+        const query = `
+          [out:json][timeout:15];
+          (
+            node["public_transport"](around:1000, ${lat}, ${lng});
+            node["shop"](around:1000, ${lat}, ${lng});
+            node["office"](around:1000, ${lat}, ${lng});
+          );
+          out body;
+        `;
+        const poiRes = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        const poiData = await poiRes.json();
 
-        // FIXED MATHEMATICS: True Weighted Average
-        const wTransit = parseInt(document.getElementById('weight-transit').value);
-        const wZoning = parseInt(document.getElementById('weight-zoning').value);
-        const wInflow = parseInt(document.getElementById('weight-inflow').value);
+        // 3. Process Spatial Distance Decay (IDW)
+        let rawTransit = 0, rawCom = 0;
+        let tNodes = 0, cNodes = 0;
+        const nodesToMap = [];
+
+        poiData.elements.forEach(el => {
+          const distance = Math.max(getDistance(lat, lng, el.lat, el.lon), 0.05); // cap min distance at 50m
+          const decayValue = 1 / Math.pow(distance, 2); // Inverse-Square Law
+          
+          let type = '';
+          if (el.tags.public_transport) {
+            rawTransit += decayValue;
+            tNodes++;
+            type = 'transit';
+          } else if (el.tags.shop || el.tags.office) {
+            rawCom += decayValue;
+            cNodes++;
+            type = 'com';
+          }
+          
+          if (type) nodesToMap.push({ lat: el.lat, lon: el.lon, type });
+        });
+
+        // Normalize raw scores (Thresholds tuned for city densities)
+        const transitScore = Math.min((rawTransit / 40) * 100, 100); 
+        const zoningScore = Math.min((rawCom / 150) * 100, 100);
         
-        const totalWeight = wTransit + wZoning + wInflow;
-
-        const transitScore = Math.min((transitStops / 20) * 100, 100); 
-        const zoningScore = 75; // Static estimate fallback
-        const inflowScore = 65; // Static estimate fallback
-
-        // Calculate the weighted average out of 100
-        let baseScore = 0;
-        if (totalWeight > 0) {
-          baseScore = ((transitScore * wTransit) + (zoningScore * wZoning) + (inflowScore * wInflow)) / totalWeight;
-        }
-
-        const floodPenalty = elevation < 5 ? 25 : (elevation < 10 ? 10 : 0);
-        const finalScore = Math.max(0, Math.min(Math.round(baseScore - floodPenalty), 98));
-
-        return { score: finalScore, elevation, transitStops };
+        const dataObj = { elevation, transitScore, zoningScore, tNodes, cNodes, nodesToMap };
+        sessionStorage.setItem(cacheKey, JSON.stringify(dataObj)); // Cache result
+        
+        return dataObj;
 
       } catch (error) {
-        console.error("API Error:", error);
-        return { score: 'ERR', elevation: '?', transitStops: '?' };
+        console.error(error);
+        return null;
       }
     }
 
-    map.on('click', async function(e) {
-      const lat = e.latlng.lat.toFixed(4);
-      const lng = e.latlng.lng.toFixed(4);
-      
-      document.getElementById('prospect-score').innerText = 'Calc...';
-      document.getElementById('prospect-score').style.color = '#94a3b8';
-      document.getElementById('location-info').innerText = `Coords: ${lat}, ${lng}`;
-      document.getElementById('live-metrics').innerText = 'Fetching satellite/GIS data...';
+    // Map Click Event (Debounced)
+    map.on('click', function(e) {
+      clearTimeout(clickTimeout);
+      clickTimeout = setTimeout(async () => {
+        const lat = e.latlng.lat.toFixed(4);
+        const lng = e.latlng.lng.toFixed(4);
+        
+        // UI Loading State
+        document.getElementById('prospect-score').innerText = '...';
+        document.getElementById('prospect-score').style.color = '#94a3b8';
+        document.getElementById('location-info').innerText = `Coords: ${lat}, ${lng}`;
+        document.getElementById('metric-transit').innerText = `🚉 Transit: Calc...`;
+        document.getElementById('metric-com').innerText = `🏢 Comm: Calc...`;
 
-      if (activeMarker) map.removeLayer(activeMarker);
+        // Clear Map Graphics
+        activeLayers.clearLayers();
 
-      const data = await calculateRealProspect(lat, lng);
+        // Draw Target Marker and Pulse Radius (1km) immediately
+        L.circleMarker(e.latlng, { radius: 8, fillColor: '#ffffff', color: '#000', weight: 2, fillOpacity: 1 }).addTo(activeLayers);
+        L.circle(e.latlng, { radius: 1000, color: '#38bdf8', weight: 1, fillColor: '#38bdf8', fillOpacity: 0.1, dashArray: '5, 5' }).addTo(activeLayers);
 
-      const badgeColor = data.score > 75 ? '#4ade80' : data.score > 50 ? '#facc15' : '#f87171';
-      
-      document.getElementById('prospect-score').innerText = data.score + '%';
-      document.getElementById('prospect-score').style.color = badgeColor;
-      
-      document.getElementById('live-metrics').innerText = 
-        `🚉 Transit Nodes (1km): ${data.transitStops} | ⛰️ Elev: ${data.elevation}m`;
+        const data = await calculateRealProspect(lat, lng);
+        if(!data) return alert("API Rate limit hit. Please wait 10 seconds.");
 
-      activeMarker = L.circleMarker(e.latlng, {
-        radius: 12, fillColor: badgeColor, color: '#ffffff', weight: 2, fillOpacity: 0.85
-      }).addTo(map);
+        // Apply Weights & Math
+        const wT = parseInt(document.getElementById('weight-transit').value);
+        const wZ = parseInt(document.getElementById('weight-zoning').value);
+        const wI = parseInt(document.getElementById('weight-inflow').value);
+        const inflowScore = 65; // Final static fallback variable
+        
+        const totalWeight = wT + wZ + wI;
+        let baseScore = ((data.transitScore * wT) + (data.zoningScore * wZ) + (inflowScore * wI)) / totalWeight;
+
+        // Penalize for flood risk (Elevation under 5m)
+        const floodPenalty = data.elevation < 5 ? 25 : (data.elevation < 10 ? 10 : 0);
+        const finalScore = Math.max(0, Math.min(Math.round(baseScore - floodPenalty), 98));
+
+        // Update UI Dashboard
+        const badgeColor = finalScore > 75 ? '#4ade80' : finalScore > 50 ? '#facc15' : '#f87171';
+        document.getElementById('prospect-score').innerText = finalScore + '%';
+        document.getElementById('prospect-score').style.color = badgeColor;
+        document.getElementById('metric-transit').innerText = `🚉 Transit: ${data.tNodes} nodes`;
+        document.getElementById('metric-com').innerText = `🏢 Comm: ${data.cNodes} nodes`;
+        document.getElementById('metric-elev').innerText = `⛰️ Elevation: ${data.elevation}m (Risk: ${floodPenalty > 0 ? 'HIGH' : 'LOW'})`;
+
+        // Plot Discovered Nodes on Satellite Map
+        data.nodesToMap.forEach(n => {
+          const nodeColor = n.type === 'transit' ? '#60a5fa' : '#facc15';
+          L.circleMarker([n.lat, n.lon], {
+            radius: 3, fillColor: nodeColor, color: '#000', weight: 1, fillOpacity: 0.9
+          }).addTo(activeLayers);
+        });
+      }, 600); // 600ms debounce
     });
 
+    // Slider Sync
     ['transit', 'zoning', 'inflow'].forEach(id => {
       const slider = document.getElementById(`weight-${id}`);
-      const label = document.getElementById(`val-${id}`);
-      slider.addEventListener('input', () => label.innerText = slider.value);
+      slider.addEventListener('input', () => document.getElementById(`val-${id}`).innerText = slider.value);
     });
   </script>
 </body>
