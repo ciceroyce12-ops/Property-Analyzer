@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Land Prospect Analyzer 2030</title>
+  
+  <!-- Leaflet GIS Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body, html { height: 100%; width: 100%; overflow: hidden; }
+    #map { height: 100vh; width: 100vw; z-index: 1; }
+    
+    /* Responsive Floating Sidebar */
+    .panel {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.92);
+      color: #f8fafc;
+      padding: 18px;
+      border-radius: 14px;
+      width: 320px;
+      max-width: 90vw;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .panel h2 { font-size: 1.1rem; margin-bottom: 4px; color: #38bdf8; }
+    .panel p { font-size: 0.78rem; color: #94a3b8; margin-bottom: 14px; }
+    
+    .slider-group { margin-bottom: 12px; }
+    .slider-group label { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; margin-bottom: 4px; color: #cbd5e1; }
+    .slider-group input { width: 100%; accent-color: #38bdf8; cursor: pointer; }
+    
+    .stats-card {
+      margin-top: 15px;
+      background: rgba(255,255,255,0.06);
+      padding: 12px;
+      border-radius: 10px;
+      border-left: 4px solid #38bdf8;
+    }
+    .stats-card h3 { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .score-display { font-size: 2rem; font-weight: 800; color: #4ade80; margin: 2px 0; }
+    .location-details { font-size: 0.75rem; color: #cbd5e1; }
+  </style>
+</head>
+<body>
+
+  <div class="panel">
+    <h2>4-Year Land Prospect AI</h2>
+    <p>Click anywhere on the map to calculate future value appreciation score.</p>
+    
+    <div class="slider-group">
+      <label>Transit Infrastructure <span id="val-transit">70%</span></label>
+      <input type="range" id="weight-transit" min="0" max="100" value="70">
+    </div>
+    <div class="slider-group">
+      <label>Commercial Zoning Density <span id="val-zoning">80%</span></label>
+      <input type="range" id="weight-zoning" min="0" max="100" value="80">
+    </div>
+    <div class="slider-group">
+      <label>Population Growth Inflow <span id="val-inflow">65%</span></label>
+      <input type="range" id="weight-inflow" min="0" max="100" value="65">
+    </div>
+
+    <div class="stats-card">
+      <h3>4-Yr Appreciation Potential</h3>
+      <div class="score-display" id="prospect-score">-- %</div>
+      <div class="location-details" id="location-info">Click map coordinates to evaluate</div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Leaflet GIS Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // 1. Initialize Map (Default centered near Jakarta)
+    const map = L.map('map').setView([-6.2088, 106.8456], 11);
+
+    // 2. High-Tech Dark Base Layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      maxZoom: 19
+    }).addTo(map);
+
+    let activeMarker = null;
+
+    // 3. Score Calculation Algorithm
+    function calculateProspect(lat, lng) {
+      const wTransit = parseInt(document.getElementById('weight-transit').value);
+      const wZoning = parseInt(document.getElementById('weight-zoning').value);
+      const wInflow = parseInt(document.getElementById('weight-inflow').value);
+
+      // Algorithmic seed calculation from coordinates
+      const spatialFactor = Math.abs(Math.sin(lat * 12.9898 + lng * 78.233) * 43758.5453) % 1;
+      const baseValue = (spatialFactor * 40);
+      const weightedSliders = (wTransit * 0.25) + (wZoning * 0.20) + (wInflow * 0.15);
+      
+      return Math.min(Math.round(baseValue + weightedSliders), 98);
+    }
+
+    // 4. Map Click Evaluation Event
+    map.on('click', function(e) {
+      const lat = e.latlng.lat.toFixed(4);
+      const lng = e.latlng.lng.toFixed(4);
+      const score = calculateProspect(lat, lng);
+
+      if (activeMarker) map.removeLayer(activeMarker);
+
+      // Dynamic Color Rating
+      const badgeColor = score > 75 ? '#4ade80' : score > 50 ? '#facc15' : '#f87171';
+
+      activeMarker = L.circleMarker(e.latlng, {
+        radius: 12,
+        fillColor: badgeColor,
+        color: '#ffffff',
+        weight: 2,
+        fillOpacity: 0.85
+      }).addTo(map);
+
+      // Update Dashboard Overlay
+      const scoreElement = document.getElementById('prospect-score');
+      scoreElement.innerText = score + '%';
+      scoreElement.style.color = badgeColor;
+      document.getElementById('location-info').innerText = `Coords: ${lat}, ${lng}`;
+    });
+
+    // 5. Real-Time Slider Sync
+    ['transit', 'zoning', 'inflow'].forEach(id => {
+      const slider = document.getElementById(`weight-${id}`);
+      const label = document.getElementById(`val-${id}`);
+      slider.addEventListener('input', () => {
+        label.innerText = slider.value + '%';
+      });
+    });
+  </script>
+</body>
+</html>
