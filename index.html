@@ -15,7 +15,7 @@
     .panel {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.96); color: #f8fafc;
-      padding: 16px; border-radius: 14px; width: 360px; max-width: 92vw;
+      padding: 16px; border-radius: 14px; width: 375px; max-width: 92vw;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.15); max-height: 95vh; overflow-y: auto;
     }
@@ -60,7 +60,11 @@
       margin-top: 10px; background: rgba(255,255,255,0.05);
       padding: 10px; border-radius: 8px; border-left: 4px solid #38bdf8;
     }
+    .stats-header { display: flex; justify-content: space-between; align-items: center; }
     .stats-card h3 { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .save-btn { background: rgba(74, 222, 128, 0.15); border: 1px solid #4ade80; color: #4ade80; padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; cursor: pointer; }
+    .save-btn:hover { background: #4ade80; color: #0f172a; }
+
     .score-display { font-size: 1.8rem; font-weight: 800; color: #4ade80; margin: 2px 0; }
     .location-details { font-size: 0.72rem; color: #cbd5e1; margin-bottom: 4px; }
     
@@ -73,6 +77,15 @@
     .calc-input-row label { font-size: 0.71rem; color: #cbd5e1; width: 110px; }
     .calc-input-row input { flex: 1; padding: 4px 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: white; font-size: 0.75rem; }
     .calc-result { font-size: 0.75rem; color: #f8fafc; font-weight: bold; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 5px; margin-top: 4px; }
+
+    /* Saved Portfolio Section */
+    .portfolio-section { margin-top: 10px; background: rgba(255, 255, 255, 0.03); padding: 8px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); }
+    .portfolio-section h4 { font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; margin-bottom: 5px; display: flex; justify-content: space-between; }
+    .saved-list { max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+    .saved-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 4px 6px; border-radius: 4px; font-size: 0.68rem; border: 1px solid rgba(255,255,255,0.05); }
+    .saved-item span { cursor: pointer; color: #cbd5e1; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 6px; }
+    .saved-item span:hover { color: #38bdf8; }
+    .delete-saved { background: none; border: none; color: #f87171; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
 
     .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
     .modal-content { background: #0f172a; color: #f8fafc; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #38bdf8; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
@@ -92,12 +105,11 @@
   <div id="tutorial-modal" class="modal" style="display: flex;">
     <div class="modal-content">
       <h3>📖 Quick User Guide</h3>
-      <p>Welcome to the Global Land Prospect AI. Master the map anywhere on Earth:</p>
+      <p>Welcome back to Global Land Prospect AI. New enhancements active:</p>
       <ul>
-        <li><b>Pan & Explore:</b> Move the map anywhere in the world—the Hotspots box updates automatically to match your region!</li>
-        <li><b>Tap the Map:</b> Click any location to calculate a 1.2km walking catchment analysis.</li>
-        <li><b>Color Codes:</b> <span style="color:#4ade80">Green</span> = High Growth (>75%), <span style="color:#facc15">Yellow</span> = Moderate (50-75%), <span style="color:#f87171">Red</span> = Low/Risky (&lt;50%).</li>
-        <li><b>Currency & ROI:</b> Change currency and input local prices to calculate 4-year financial returns.</li>
+        <li><b>Live Forex Conversion:</b> Switching currencies instantly converts your investment price using live market rates.</li>
+        <li><b>Property Portfolio:</b> Click <b>⭐ Save</b> to bookmark coordinates and persist them via browser storage.</li>
+        <li><b>Dynamic Hotspots:</b> Pans automatically to load top regional development nodes.</li>
       </ul>
       <button class="close-modal" onclick="closeTutorial()">Got It!</button>
     </div>
@@ -108,11 +120,11 @@
       <h2>Global Land Prospect AI</h2>
       <button class="help-btn" onclick="openTutorial()" title="Help Guide">?</button>
     </div>
-    <p>Region-Aware GIS Analyzer with Financial ROI Projection.</p>
+    <p>Region-Aware GIS Analyzer with Live Forex & Portfolio Saving.</p>
 
     <div class="search-box">
       <input type="text" id="search-input" placeholder="Search city globally..." onkeydown="if(event.key === 'Enter') searchLocation()">
-      <select id="currency-select" onchange="updateCalculations()">
+      <select id="currency-select" onchange="changeCurrency()">
         <option value="USD">USD ($)</option>
         <option value="IDR">IDR (Rp)</option>
         <option value="EUR">EUR (€)</option>
@@ -125,9 +137,7 @@
     <!-- Dynamic Regional Hotspots Drawer -->
     <div class="hotspots-section">
       <h4>🔥 Top Growth Hotspots <span class="region-tag" id="current-region-tag">Indonesia</span></h4>
-      <div class="hotspot-grid" id="hotspots-container">
-        <!-- Dynamically injected via JavaScript based on map position -->
-      </div>
+      <div class="hotspot-grid" id="hotspots-container"></div>
     </div>
     
     <div class="slider-group">
@@ -144,9 +154,12 @@
     </div>
 
     <div class="stats-card">
-      <h3>Appreciation Potential</h3>
+      <div class="stats-header">
+        <h3>Appreciation Potential</h3>
+        <button class="save-btn" onclick="saveCurrentProperty()">⭐ Save</button>
+      </div>
       <div class="score-display" id="prospect-score">-- %</div>
-      <div class="location-details" id="location-info">Tap map or select hotspot...</div>
+      <div class="location-details" id="location-info" data-lat="" data-lng="">Tap map or select hotspot...</div>
       
       <div class="metrics-grid">
         <div class="metric-badge" id="metric-transit">🚉 Transit: --</div>
@@ -162,6 +175,14 @@
           <input type="number" id="purchase-price" value="50000" oninput="updateCalculations()">
         </div>
         <div class="calc-result" id="calc-output">Future Value: --</div>
+      </div>
+
+      <!-- Saved Properties Portfolio Drawer -->
+      <div class="portfolio-section">
+        <h4>📁 Saved Portfolio (<span id="saved-count">0</span>)</h4>
+        <div class="saved-list" id="saved-props-container">
+          <p style="font-size:0.68rem; color:#64748b; font-style:italic;">No saved locations yet.</p>
+        </div>
       </div>
 
       <div class="legend">
@@ -191,11 +212,103 @@
     let clickTimeout = null;
     let currentScore = 0;
 
+    // Currency exchange rates relative to USD (Live updated via API with smart fallbacks)
+    let exchangeRates = { USD: 1, IDR: 16000, EUR: 0.92, GBP: 0.78, SGD: 1.35 };
+    let currentCurrency = "USD";
+    let basePriceUSD = 50000;
+
+    async function initExchangeRates() {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD');
+        const data = await res.json();
+        if (data && data.rates) {
+          exchangeRates = data.rates;
+        }
+      } catch (e) {
+        console.warn("Using offline fallback rates.");
+      }
+    }
+    initExchangeRates();
+
+    function changeCurrency() {
+      const newCurrency = document.getElementById('currency-select').value;
+      const priceInput = document.getElementById('purchase-price');
+      
+      // Convert existing input value back to USD, then to new currency
+      const currentInputValue = parseFloat(priceInput.value) || 0;
+      const rateFrom = exchangeRates[currentCurrency] || 1;
+      const rateTo = exchangeRates[newCurrency] || 1;
+
+      basePriceUSD = currentInputValue / rateFrom;
+      const convertedPrice = basePriceUSD * rateTo;
+
+      priceInput.value = Math.round(convertedPrice);
+      currentCurrency = newCurrency;
+      updateCalculations();
+    }
+
+    // Saved Portfolio State
+    let savedProperties = JSON.parse(localStorage.getItem('landProspectSaved')) || [];
+    renderSavedProperties();
+
+    function saveCurrentProperty() {
+      if (currentScore === 0) {
+        alert("Please select a location on the map first.");
+        return;
+      }
+      const lat = document.getElementById('location-info').getAttribute('data-lat');
+      const lng = document.getElementById('location-info').getAttribute('data-lng');
+      const nameQuery = document.getElementById('search-input').value;
+      const name = nameQuery ? nameQuery : `Lat: ${lat}, Lng: ${lng}`;
+
+      const newProp = { id: Date.now(), name, lat, lng, score: currentScore };
+      
+      // Avoid duplicate saves of exact coords
+      savedProperties = savedProperties.filter(p => !(p.lat === lat && p.lng === lng));
+      savedProperties.unshift(newProp);
+      
+      localStorage.setItem('landProspectSaved', JSON.stringify(savedProperties));
+      renderSavedProperties();
+    }
+
+    function removeSavedProperty(id, event) {
+      event.stopPropagation();
+      savedProperties = savedProperties.filter(p => p.id !== id);
+      localStorage.setItem('landProspectSaved', JSON.stringify(savedProperties));
+      renderSavedProperties();
+    }
+
+    function jumpToSaved(lat, lng) {
+      map.flyTo([lat, lng], 14);
+      setTimeout(() => evaluateCoordinates(lat, lng), 1200);
+    }
+
+    function renderSavedProperties() {
+      const container = document.getElementById('saved-props-container');
+      const countEl = document.getElementById('saved-count');
+      countEl.innerText = savedProperties.length;
+
+      if (savedProperties.length === 0) {
+        container.innerHTML = `<p style="font-size:0.68rem; color:#64748b; font-style:italic;">No saved locations yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      savedProperties.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'saved-item';
+        item.innerHTML = `
+          <span onclick="jumpToSaved(${p.lat}, ${p.lng})" title="${p.name}">📍 <b>${p.name}</b> (${p.score}%)</span>
+          <button class="delete-saved" onclick="removeSavedProperty(${p.id}, event)" title="Remove">×</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
     // Regional Hotspots Datasets
     const regionalHotspots = {
       indonesia: {
         name: "Indonesia",
-        currency: "IDR",
         spots: [
           { name: "1. Cakung (JKT)", lat: -6.1856, lng: 106.9483, zoom: 14 },
           { name: "2. Cikarang (BKS)", lat: -6.3227, lng: 107.1472, zoom: 14 },
@@ -205,7 +318,6 @@
       },
       usa: {
         name: "United States",
-        currency: "USD",
         spots: [
           { name: "1. Austin (TX)", lat: 30.2672, lng: -97.7431, zoom: 13 },
           { name: "2. Charlotte (NC)", lat: 35.2271, lng: -80.8431, zoom: 13 },
@@ -215,7 +327,6 @@
       },
       europe: {
         name: "Europe",
-        currency: "EUR",
         spots: [
           { name: "1. Valencia (ES)", lat: 39.4699, lng: -0.3763, zoom: 13 },
           { name: "2. Warsaw (PL)", lat: 52.2297, lng: 21.0122, zoom: 13 },
@@ -225,7 +336,6 @@
       },
       global: {
         name: "Global Hubs",
-        currency: "USD",
         spots: [
           { name: "1. Tokyo (JP)", lat: 35.6762, lng: 139.6503, zoom: 13 },
           { name: "2. Singapore", lat: 1.3521, lng: 103.8198, zoom: 13 },
@@ -249,7 +359,6 @@
       });
     }
 
-    // Detect region based on map center coordinates
     function checkMapRegion() {
       const center = map.getCenter();
       let regionKey = 'global';
@@ -264,7 +373,6 @@
     }
 
     map.on('moveend', checkMapRegion);
-    // Initialize default
     updateHotspotsUI('indonesia');
 
     function openTutorial() { document.getElementById('tutorial-modal').style.display = 'flex'; }
@@ -383,7 +491,12 @@
     async function evaluateCoordinates(lat, lng) {
       document.getElementById('prospect-score').innerText = '...';
       document.getElementById('prospect-score').style.color = '#94a3b8';
-      document.getElementById('location-info').innerText = `Coords: ${lat}, ${lng}`;
+      
+      const locInfo = document.getElementById('location-info');
+      locInfo.innerText = `Coords: ${lat}, ${lng}`;
+      locInfo.setAttribute('data-lat', lat);
+      locInfo.setAttribute('data-lng', lng);
+
       document.getElementById('metric-transit').innerText = `🚉 Transit: Calc...`;
       document.getElementById('metric-com').innerText = `🏢 Comm: Calc...`;
       document.getElementById('metric-amenity').innerText = `🌳 Amenities: Calc...`;
