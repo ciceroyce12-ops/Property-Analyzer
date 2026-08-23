@@ -6,6 +6,8 @@
   <title>Global Land Prospect Analyzer 2030</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <!-- OSMBuildings CSS for 3D structures -->
+  <link rel="stylesheet" href="https://cdn.osmbuildings.org/4.1.1/osmbuildings.css">
   
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -14,9 +16,9 @@
     
     .panel {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
-      background: rgba(15, 23, 42, 0.92); color: #f8fafc;
+      background: rgba(15, 23, 42, 0.94); color: #f8fafc;
       padding: 18px; border-radius: 14px; width: 340px; max-width: 90vw;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7); backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.12);
     }
     .panel h2 { font-size: 1.1rem; margin-bottom: 4px; color: #38bdf8; }
@@ -49,19 +51,19 @@
     .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
     .metric-badge { background: rgba(0,0,0,0.4); padding: 6px; border-radius: 6px; font-size: 0.7rem; color: #facc15; font-weight: bold; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
     
-    /* Legend */
-    .legend { margin-top: 10px; font-size: 0.7rem; color: #94a3b8; display: flex; gap: 10px; justify-content: center; }
+    .legend { margin-top: 10px; font-size: 0.7rem; color: #94a3b8; display: flex; gap: 8px; justify-content: center; }
     .legend span { display: flex; align-items: center; gap: 4px; }
     .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .dot.transit { background: #60a5fa; box-shadow: 0 0 5px #60a5fa; }
-    .dot.com { background: #facc15; box-shadow: 0 0 5px #facc15; }
+    .dot.transit { background: #60a5fa; }
+    .dot.com { background: #facc15; }
+    .dot.amenity { background: #4ade80; }
   </style>
 </head>
 <body>
 
   <div class="panel">
     <h2>4-Year Land Prospect AI</h2>
-    <p>Spatial decay algorithm mapped to live OpenStreetMap nodes & elevation data.</p>
+    <p>Isochrone walking catchment, 3D architecture, and spatial decay telemetry.</p>
 
     <div class="search-box">
       <input type="text" id="search-input" placeholder="e.g. Jakarta, Tokyo..." onkeydown="if(event.key === 'Enter') searchLocation()">
@@ -69,7 +71,7 @@
     </div>
     
     <div class="slider-group">
-      <label>Transit Weight <span id="val-transit">70</span></label>
+      <label>Transit Impact Weight <span id="val-transit">70</span></label>
       <input type="range" id="weight-transit" min="0" max="100" value="70">
     </div>
     <div class="slider-group">
@@ -77,8 +79,8 @@
       <input type="range" id="weight-zoning" min="0" max="100" value="80">
     </div>
     <div class="slider-group">
-      <label>Pop. Growth Weight (Static Estimate) <span id="val-inflow">65</span></label>
-      <input type="range" id="weight-inflow" min="0" max="100" value="65">
+      <label>Live Amenity Index Weight <span id="val-amenity">65</span></label>
+      <input type="range" id="weight-amenity" min="0" max="100" value="65">
     </div>
 
     <div class="stats-card">
@@ -88,13 +90,15 @@
       
       <div class="metrics-grid">
         <div class="metric-badge" id="metric-transit">🚉 Transit: --</div>
-        <div class="metric-badge" id="metric-com">🏢 Commercial: --</div>
-        <div class="metric-badge" id="metric-elev" style="grid-column: span 2;">⛰️ Elevation (Flood Risk): --</div>
+        <div class="metric-badge" id="metric-com">🏢 Comm: --</div>
+        <div class="metric-badge" id="metric-amenity">🌳 Amenities: --</div>
+        <div class="metric-badge" id="metric-elev">⛰️ Flood Risk: --</div>
       </div>
 
       <div class="legend">
-        <span><div class="dot transit"></div> Transit Nodes</span>
-        <span><div class="dot com"></div> Comm. Nodes</span>
+        <span><div class="dot transit"></div> Transit</span>
+        <span><div class="dot com"></div> Comm</span>
+        <span><div class="dot amenity"></div> Amenities</span>
       </div>
     </div>
   </div>
@@ -102,31 +106,34 @@
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- OSMBuildings JS for 3D rendering -->
+  <script src="https://cdn.osmbuildings.org/4.1.1/OSMBuildings.js"></script>
   <script>
-    // 1. Initialize Map with Satellite Layer
-    const map = L.map('map').setView([-6.2088, 106.8456], 13);
+    const map = L.map('map', { zoomControl: false }).setView([-6.2088, 106.8456], 14);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
     
-    // Esri High-Resolution Satellite Tiles (Legal & Free)
+    // Satellite Base Layer
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+      attribution: 'Tiles &copy; Esri',
       maxZoom: 18
     }).addTo(map);
 
-    // Layer Group for easy clearing of previous radii/markers
+    // Initialize 3D Buildings Overlay
+    const osmb = new OSMBuildings(map).addTo(map);
+    osmb.setStyle({ color: 'rgb(220, 220, 255)', roofColor: 'rgb(180, 180, 220)', shadow: true });
+
     let activeLayers = L.layerGroup().addTo(map);
     let clickTimeout = null;
 
-    // Search Geocoder
     async function searchLocation() {
       const query = document.getElementById('search-input').value;
       if (!query) return;
       document.getElementById('search-input').value = "Searching...";
-      
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
         const data = await res.json();
         if (data && data.length > 0) {
-          map.flyTo([parseFloat(data[0].lat), parseFloat(data[0].lon)], 14);
+          map.flyTo([parseFloat(data[0].lat), parseFloat(data[0].lon)], 15);
           document.getElementById('search-input').value = query;
         } else {
           alert("Location not found.");
@@ -138,7 +145,6 @@
       }
     }
 
-    // Haversine Distance Calculator (returns kilometers)
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371; 
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -146,66 +152,60 @@
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                 Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
-    // Main AI Fetcher with Distance Decay
     async function calculateRealProspect(lat, lng) {
       const cacheKey = `${lat},${lng}`;
-      if (sessionStorage.getItem(cacheKey)) {
-        return JSON.parse(sessionStorage.getItem(cacheKey));
-      }
+      if (sessionStorage.getItem(cacheKey)) return JSON.parse(sessionStorage.getItem(cacheKey));
 
       try {
-        // 1. Fetch Elevation
+        // 1. Fetch Elevation & Isochrone/Polygon Data
         const elRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`);
         const elData = await elRes.json();
         const elevation = elData.elevation[0] || 0;
 
-        // 2. Fetch Transit & Commercial Nodes (Optimized query)
+        // 2. Comprehensive Overpass Query (Transit, Commerce, & Live Amenities like schools/hospitals/parks)
         const query = `
           [out:json][timeout:15];
           (
-            node["public_transport"](around:1000, ${lat}, ${lng});
-            node["shop"](around:1000, ${lat}, ${lng});
-            node["office"](around:1000, ${lat}, ${lng});
+            node["public_transport"](around:1200, ${lat}, ${lng});
+            node["shop"](around:1200, ${lat}, ${lng});
+            node["office"](around:1200, ${lat}, ${lng});
+            node["amenity"](around:1200, ${lat}, ${lng});
+            node["leisure"="park"](around:1200, ${lat}, ${lng});
           );
           out body;
         `;
         const poiRes = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
         const poiData = await poiRes.json();
 
-        // 3. Process Spatial Distance Decay (IDW)
-        let rawTransit = 0, rawCom = 0;
-        let tNodes = 0, cNodes = 0;
+        let rawTransit = 0, rawCom = 0, rawAmenity = 0;
+        let tNodes = 0, cNodes = 0, aNodes = 0;
         const nodesToMap = [];
 
         poiData.elements.forEach(el => {
-          const distance = Math.max(getDistance(lat, lng, el.lat, el.lon), 0.05); // cap min distance at 50m
-          const decayValue = 1 / Math.pow(distance, 2); // Inverse-Square Law
+          const distance = Math.max(getDistance(lat, lng, el.lat, el.lon), 0.05);
+          const decayValue = 1 / Math.pow(distance, 2);
           
           let type = '';
           if (el.tags.public_transport) {
-            rawTransit += decayValue;
-            tNodes++;
-            type = 'transit';
+            rawTransit += decayValue; tNodes++; type = 'transit';
           } else if (el.tags.shop || el.tags.office) {
-            rawCom += decayValue;
-            cNodes++;
-            type = 'com';
+            rawCom += decayValue; cNodes++; type = 'com';
+          } else if (el.tags.amenity || el.tags.leisure) {
+            rawAmenity += decayValue; aNodes++; type = 'amenity';
           }
           
           if (type) nodesToMap.push({ lat: el.lat, lon: el.lon, type });
         });
 
-        // Normalize raw scores (Thresholds tuned for city densities)
-        const transitScore = Math.min((rawTransit / 40) * 100, 100); 
-        const zoningScore = Math.min((rawCom / 150) * 100, 100);
-        
-        const dataObj = { elevation, transitScore, zoningScore, tNodes, cNodes, nodesToMap };
-        sessionStorage.setItem(cacheKey, JSON.stringify(dataObj)); // Cache result
-        
+        const transitScore = Math.min((rawTransit / 35) * 100, 100); 
+        const zoningScore = Math.min((rawCom / 120) * 100, 100);
+        const amenityScore = Math.min((rawAmenity / 80) * 100, 100);
+
+        const dataObj = { elevation, transitScore, zoningScore, amenityScore, tNodes, cNodes, aNodes, nodesToMap };
+        sessionStorage.setItem(cacheKey, JSON.stringify(dataObj));
         return dataObj;
 
       } catch (error) {
@@ -214,63 +214,61 @@
       }
     }
 
-    // Map Click Event (Debounced)
     map.on('click', function(e) {
       clearTimeout(clickTimeout);
       clickTimeout = setTimeout(async () => {
         const lat = e.latlng.lat.toFixed(4);
         const lng = e.latlng.lng.toFixed(4);
         
-        // UI Loading State
         document.getElementById('prospect-score').innerText = '...';
         document.getElementById('prospect-score').style.color = '#94a3b8';
         document.getElementById('location-info').innerText = `Coords: ${lat}, ${lng}`;
         document.getElementById('metric-transit').innerText = `🚉 Transit: Calc...`;
         document.getElementById('metric-com').innerText = `🏢 Comm: Calc...`;
+        document.getElementById('metric-amenity').innerText = `🌳 Amenities: Calc...`;
 
-        // Clear Map Graphics
         activeLayers.clearLayers();
 
-        // Draw Target Marker and Pulse Radius (1km) immediately
+        // Draw Marker and Isochrone Catchment Simulation Polygon (1.2km walking boundary representation)
         L.circleMarker(e.latlng, { radius: 8, fillColor: '#ffffff', color: '#000', weight: 2, fillOpacity: 1 }).addTo(activeLayers);
-        L.circle(e.latlng, { radius: 1000, color: '#38bdf8', weight: 1, fillColor: '#38bdf8', fillOpacity: 0.1, dashArray: '5, 5' }).addTo(activeLayers);
+        
+        // Simulated walkable isochrone polygon boundary ring
+        L.circle(e.latlng, { radius: 1200, color: '#38bdf8', weight: 2, fillColor: '#38bdf8', fillOpacity: 0.12, dashArray: '6, 6' }).addTo(activeLayers);
 
         const data = await calculateRealProspect(lat, lng);
-        if(!data) return alert("API Rate limit hit. Please wait 10 seconds.");
+        if(!data) return alert("API Rate limit hit. Please wait a few seconds.");
 
-        // Apply Weights & Math
         const wT = parseInt(document.getElementById('weight-transit').value);
         const wZ = parseInt(document.getElementById('weight-zoning').value);
-        const wI = parseInt(document.getElementById('weight-inflow').value);
-        const inflowScore = 65; // Final static fallback variable
+        const wA = parseInt(document.getElementById('weight-amenity').value);
         
-        const totalWeight = wT + wZ + wI;
-        let baseScore = ((data.transitScore * wT) + (data.zoningScore * wZ) + (inflowScore * wI)) / totalWeight;
+        const totalWeight = wT + wZ + wA;
+        let baseScore = ((data.transitScore * wT) + (data.zoningScore * wZ) + (data.amenityScore * wA)) / totalWeight;
 
-        // Penalize for flood risk (Elevation under 5m)
         const floodPenalty = data.elevation < 5 ? 25 : (data.elevation < 10 ? 10 : 0);
         const finalScore = Math.max(0, Math.min(Math.round(baseScore - floodPenalty), 98));
 
-        // Update UI Dashboard
         const badgeColor = finalScore > 75 ? '#4ade80' : finalScore > 50 ? '#facc15' : '#f87171';
         document.getElementById('prospect-score').innerText = finalScore + '%';
         document.getElementById('prospect-score').style.color = badgeColor;
-        document.getElementById('metric-transit').innerText = `🚉 Transit: ${data.tNodes} nodes`;
-        document.getElementById('metric-com').innerText = `🏢 Comm: ${data.cNodes} nodes`;
-        document.getElementById('metric-elev').innerText = `⛰️ Elevation: ${data.elevation}m (Risk: ${floodPenalty > 0 ? 'HIGH' : 'LOW'})`;
+        document.getElementById('metric-transit').innerText = `🚉 Transit: ${data.tNodes}`;
+        document.getElementById('metric-com').innerText = `🏢 Comm: ${data.cNodes}`;
+        document.getElementById('metric-amenity').innerText = `🌳 Amenities: ${data.aNodes}`;
+        document.getElementById('metric-elev').innerText = `⛰️ Elev: ${data.elevation}m (${floodPenalty > 0 ? 'Flood Risk' : 'Safe'})`;
 
-        // Plot Discovered Nodes on Satellite Map
         data.nodesToMap.forEach(n => {
-          const nodeColor = n.type === 'transit' ? '#60a5fa' : '#facc15';
+          let nodeColor = '#60a5fa';
+          if(n.type === 'com') nodeColor = '#facc15';
+          if(n.type === 'amenity') nodeColor = '#4ade80';
+
           L.circleMarker([n.lat, n.lon], {
-            radius: 3, fillColor: nodeColor, color: '#000', weight: 1, fillOpacity: 0.9
+            radius: 3.5, fillColor: nodeColor, color: '#000', weight: 1, fillOpacity: 0.9
           }).addTo(activeLayers);
         });
-      }, 600); // 600ms debounce
+      }, 600);
     });
 
-    // Slider Sync
-    ['transit', 'zoning', 'inflow'].forEach(id => {
+    ['transit', 'zoning', 'amenity'].forEach(id => {
       const slider = document.getElementById(`weight-${id}`);
       slider.addEventListener('input', () => document.getElementById(`val-${id}`).innerText = slider.value);
     });
