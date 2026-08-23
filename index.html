@@ -12,20 +12,28 @@
     body, html { height: 100%; width: 100%; overflow: hidden; background: #000; }
     #map { height: 100vh; width: 100vw; z-index: 1; }
     
+    /* Desktop Panel Styling */
     .panel {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.96); color: #f8fafc;
-      padding: 16px; border-radius: 14px; width: 375px; max-width: 92vw;
+      padding: 16px; border-radius: 14px; width: 380px; max-width: 95vw;
       box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.15); max-height: 95vh; overflow-y: auto;
+      border: 1px solid rgba(255,255,255,0.15); max-height: 92vh; overflow-y: auto;
+      transition: transform 0.3s ease, max-height 0.3s ease;
     }
     .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
     .panel h2 { font-size: 1.05rem; color: #38bdf8; }
-    .help-btn { background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; width: 24px; height: 24px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
-    .help-btn:hover { background: #38bdf8; color: #0f172a; }
-    .panel p { font-size: 0.73rem; color: #94a3b8; margin-bottom: 10px; line-height: 1.3; }
     
-    .search-box { display: flex; gap: 8px; margin-bottom: 10px; }
+    .header-actions { display: flex; gap: 6px; align-items: center; }
+    .action-btn { 
+      background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; 
+      width: 24px; height: 24px; border-radius: 50%; font-weight: bold; cursor: pointer; 
+      display: flex; align-items: center; justify-content: center; font-size: 0.8rem; 
+    }
+    .action-btn:hover { background: #38bdf8; color: #0f172a; }
+    .panel p { font-size: 0.73rem; color: #94a3b8; margin-bottom: 8px; line-height: 1.3; }
+    
+    .search-box { display: flex; gap: 6px; margin-bottom: 8px; }
     .search-box input { 
       flex: 1; padding: 7px 10px; border-radius: 6px; 
       border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); 
@@ -41,7 +49,7 @@
     }
     .search-box button:hover { background: #0ea5e9; }
 
-    .hotspots-section { margin-bottom: 10px; background: rgba(56, 189, 248, 0.08); padding: 8px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2); }
+    .hotspots-section { margin-bottom: 8px; background: rgba(56, 189, 248, 0.08); padding: 8px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2); }
     .hotspots-section h4 { font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
     .region-tag { background: #38bdf8; color: #0f172a; padding: 1px 5px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; }
     .hotspot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
@@ -52,40 +60,39 @@
     }
     .hotspot-btn:hover { background: #38bdf8; color: #0f172a; font-weight: bold; }
 
-    .slider-group { margin-bottom: 8px; }
-    .slider-group label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; margin-bottom: 2px; color: #cbd5e1; }
-    .slider-group input { width: 100%; accent-color: #38bdf8; cursor: pointer; height: 5px; }
+    .slider-group { margin-bottom: 6px; }
+    .slider-group label { display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 600; margin-bottom: 2px; color: #cbd5e1; }
+    .slider-group input { width: 100%; accent-color: #38bdf8; cursor: pointer; height: 4px; }
     
     .stats-card {
-      margin-top: 10px; background: rgba(255,255,255,0.05);
-      padding: 10px; border-radius: 8px; border-left: 4px solid #38bdf8;
+      margin-top: 8px; background: rgba(255,255,255,0.05);
+      padding: 8px 10px; border-radius: 8px; border-left: 4px solid #38bdf8;
     }
     .stats-header { display: flex; justify-content: space-between; align-items: center; }
-    .stats-card h3 { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stats-card h3 { font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
     .save-btn { background: rgba(74, 222, 128, 0.15); border: 1px solid #4ade80; color: #4ade80; padding: 2px 8px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; cursor: pointer; }
     .save-btn:hover { background: #4ade80; color: #0f172a; }
 
-    .score-display { font-size: 1.8rem; font-weight: 800; color: #4ade80; margin: 2px 0; }
-    .location-details { font-size: 0.72rem; color: #cbd5e1; margin-bottom: 4px; }
+    .score-display { font-size: 1.6rem; font-weight: 800; color: #4ade80; margin: 2px 0; }
+    .location-details { font-size: 0.7rem; color: #cbd5e1; margin-bottom: 4px; }
     
-    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
-    .metric-badge { background: rgba(0,0,0,0.4); padding: 5px; border-radius: 5px; font-size: 0.68rem; color: #facc15; font-weight: bold; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
+    .metric-badge { background: rgba(0,0,0,0.4); padding: 4px; border-radius: 5px; font-size: 0.66rem; color: #facc15; font-weight: bold; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
     
-    .calc-box { margin-top: 10px; background: rgba(74, 222, 128, 0.08); padding: 8px; border-radius: 8px; border: 1px solid rgba(74, 222, 128, 0.2); }
-    .calc-box h4 { font-size: 0.72rem; color: #4ade80; text-transform: uppercase; margin-bottom: 5px; }
-    .calc-input-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
-    .calc-input-row label { font-size: 0.71rem; color: #cbd5e1; width: 110px; }
-    .calc-input-row input { flex: 1; padding: 4px 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: white; font-size: 0.75rem; }
-    .calc-result { font-size: 0.75rem; color: #f8fafc; font-weight: bold; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 5px; margin-top: 4px; }
+    .calc-box { margin-top: 8px; background: rgba(74, 222, 128, 0.08); padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(74, 222, 128, 0.2); }
+    .calc-box h4 { font-size: 0.7rem; color: #4ade80; text-transform: uppercase; margin-bottom: 4px; }
+    .calc-input-row { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+    .calc-input-row label { font-size: 0.68rem; color: #cbd5e1; width: 100px; }
+    .calc-input-row input { flex: 1; padding: 3px 6px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: white; font-size: 0.72rem; }
+    .calc-result { font-size: 0.72rem; color: #f8fafc; font-weight: bold; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 4px; margin-top: 3px; }
 
-    /* Saved Portfolio Section */
-    .portfolio-section { margin-top: 10px; background: rgba(255, 255, 255, 0.03); padding: 8px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); }
-    .portfolio-section h4 { font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; margin-bottom: 5px; display: flex; justify-content: space-between; }
-    .saved-list { max-height: 100px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-    .saved-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 4px 6px; border-radius: 4px; font-size: 0.68rem; border: 1px solid rgba(255,255,255,0.05); }
+    .portfolio-section { margin-top: 8px; background: rgba(255, 255, 255, 0.03); padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); }
+    .portfolio-section h4 { font-size: 0.7rem; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .saved-list { max-height: 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+    .saved-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 3px 6px; border-radius: 4px; font-size: 0.66rem; border: 1px solid rgba(255,255,255,0.05); }
     .saved-item span { cursor: pointer; color: #cbd5e1; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 6px; }
     .saved-item span:hover { color: #38bdf8; }
-    .delete-saved { background: none; border: none; color: #f87171; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
+    .delete-saved { background: none; border: none; color: #f87171; cursor: pointer; font-weight: bold; font-size: 0.72rem; }
 
     .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
     .modal-content { background: #0f172a; color: #f8fafc; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #38bdf8; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
@@ -95,9 +102,36 @@
     .modal-content li { margin-bottom: 4px; }
     .close-modal { background: #38bdf8; color: #0f172a; border: none; padding: 6px 14px; font-weight: bold; border-radius: 6px; cursor: pointer; float: right; }
 
-    .legend { margin-top: 8px; font-size: 0.65rem; color: #94a3b8; display: flex; gap: 8px; justify-content: center; }
+    .legend { margin-top: 6px; font-size: 0.62rem; color: #94a3b8; display: flex; gap: 8px; justify-content: center; }
     .legend span { display: flex; align-items: center; gap: 3px; }
     .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+    /* MOBILE RESPONSIVE BOTTOM SHEET OVERRIDE */
+    @media (max-width: 768px) {
+      .panel {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        width: 100%;
+        max-width: 100%;
+        max-height: 48vh;
+        border-radius: 18px 18px 0 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        padding: 12px 14px;
+        box-shadow: 0 -5px 25px rgba(0,0,0,0.8);
+      }
+      .panel.minimized {
+        max-height: 52px;
+        overflow: hidden;
+      }
+      .panel.minimized .hide-on-minimize {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -105,24 +139,27 @@
   <div id="tutorial-modal" class="modal" style="display: flex;">
     <div class="modal-content">
       <h3>📖 Quick User Guide</h3>
-      <p>Welcome back to Global Land Prospect AI. New enhancements active:</p>
+      <p>Welcome to Global Land Prospect AI. Enhanced for mobile & PC:</p>
       <ul>
-        <li><b>Live Forex Conversion:</b> Switching currencies instantly converts your investment price using live market rates.</li>
-        <li><b>Property Portfolio:</b> Click <b>⭐ Save</b> to bookmark coordinates and persist them via browser storage.</li>
-        <li><b>Dynamic Hotspots:</b> Pans automatically to load top regional development nodes.</li>
+        <li><b>Mobile Bottom Sheet:</b> Panel sits neatly at the bottom on phones so you can see the map. Use the <b>minimize/expand arrow</b> in the top right to toggle full map view.</li>
+        <li><b>Live Forex & Portfolio:</b> Seamless currency conversion and portfolio saving.</li>
+        <li><b>Tap & Explore:</b> Tap any point worldwide to run local catchment analytics.</li>
       </ul>
       <button class="close-modal" onclick="closeTutorial()">Got It!</button>
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="control-panel">
     <div class="header-row">
       <h2>Global Land Prospect AI</h2>
-      <button class="help-btn" onclick="openTutorial()" title="Help Guide">?</button>
+      <div class="header-actions">
+        <button class="action-btn hide-on-minimize" onclick="openTutorial()" title="Help Guide">?</button>
+        <button class="action-btn" id="toggle-panel-btn" onclick="toggleMobilePanel()" title="Minimize/Expand">▼</button>
+      </div>
     </div>
-    <p>Region-Aware GIS Analyzer with Live Forex & Portfolio Saving.</p>
+    <p class="hide-on-minimize">Region-Aware GIS Analyzer with Live Forex & Portfolio Saving.</p>
 
-    <div class="search-box">
+    <div class="search-box hide-on-minimize">
       <input type="text" id="search-input" placeholder="Search city globally..." onkeydown="if(event.key === 'Enter') searchLocation()">
       <select id="currency-select" onchange="changeCurrency()">
         <option value="USD">USD ($)</option>
@@ -135,20 +172,20 @@
     </div>
 
     <!-- Dynamic Regional Hotspots Drawer -->
-    <div class="hotspots-section">
+    <div class="hotspots-section hide-on-minimize">
       <h4>🔥 Top Growth Hotspots <span class="region-tag" id="current-region-tag">Indonesia</span></h4>
       <div class="hotspot-grid" id="hotspots-container"></div>
     </div>
     
-    <div class="slider-group">
+    <div class="slider-group hide-on-minimize">
       <label>Transit Impact <span id="val-transit">70</span></label>
       <input type="range" id="weight-transit" min="0" max="100" value="70">
     </div>
-    <div class="slider-group">
+    <div class="slider-group hide-on-minimize">
       <label>Commercial Zoning <span id="val-zoning">80</span></label>
       <input type="range" id="weight-zoning" min="0" max="100" value="80">
     </div>
-    <div class="slider-group">
+    <div class="slider-group hide-on-minimize">
       <label>Amenity Density <span id="val-amenity">65</span></label>
       <input type="range" id="weight-amenity" min="0" max="100" value="65">
     </div>
@@ -181,7 +218,7 @@
       <div class="portfolio-section">
         <h4>📁 Saved Portfolio (<span id="saved-count">0</span>)</h4>
         <div class="saved-list" id="saved-props-container">
-          <p style="font-size:0.68rem; color:#64748b; font-style:italic;">No saved locations yet.</p>
+          <p style="font-size:0.66rem; color:#64748b; font-style:italic;">No saved locations yet.</p>
         </div>
       </div>
 
@@ -211,8 +248,22 @@
     let activeLayers = L.layerGroup().addTo(map);
     let clickTimeout = null;
     let currentScore = 0;
+    let isPanelMinimized = false;
 
-    // Currency exchange rates relative to USD (Live updated via API with smart fallbacks)
+    function toggleMobilePanel() {
+      const panel = document.getElementById('control-panel');
+      const btn = document.getElementById('toggle-panel-btn');
+      isPanelMinimized = !isPanelMinimized;
+      if (isPanelMinimized) {
+        panel.classList.add('minimized');
+        btn.innerText = "▲";
+      } else {
+        panel.classList.remove('minimized');
+        btn.innerText = "▼";
+      }
+    }
+
+    // Currency exchange rates relative to USD
     let exchangeRates = { USD: 1, IDR: 16000, EUR: 0.92, GBP: 0.78, SGD: 1.35 };
     let currentCurrency = "USD";
     let basePriceUSD = 50000;
@@ -234,7 +285,6 @@
       const newCurrency = document.getElementById('currency-select').value;
       const priceInput = document.getElementById('purchase-price');
       
-      // Convert existing input value back to USD, then to new currency
       const currentInputValue = parseFloat(priceInput.value) || 0;
       const rateFrom = exchangeRates[currentCurrency] || 1;
       const rateTo = exchangeRates[newCurrency] || 1;
@@ -247,7 +297,6 @@
       updateCalculations();
     }
 
-    // Saved Portfolio State
     let savedProperties = JSON.parse(localStorage.getItem('landProspectSaved')) || [];
     renderSavedProperties();
 
@@ -263,7 +312,6 @@
 
       const newProp = { id: Date.now(), name, lat, lng, score: currentScore };
       
-      // Avoid duplicate saves of exact coords
       savedProperties = savedProperties.filter(p => !(p.lat === lat && p.lng === lng));
       savedProperties.unshift(newProp);
       
@@ -281,6 +329,7 @@
     function jumpToSaved(lat, lng) {
       map.flyTo([lat, lng], 14);
       setTimeout(() => evaluateCoordinates(lat, lng), 1200);
+      if(window.innerWidth <= 768 && !isPanelMinimized) toggleMobilePanel();
     }
 
     function renderSavedProperties() {
@@ -289,7 +338,7 @@
       countEl.innerText = savedProperties.length;
 
       if (savedProperties.length === 0) {
-        container.innerHTML = `<p style="font-size:0.68rem; color:#64748b; font-style:italic;">No saved locations yet.</p>`;
+        container.innerHTML = `<p style="font-size:0.66rem; color:#64748b; font-style:italic;">No saved locations yet.</p>`;
         return;
       }
 
@@ -305,7 +354,6 @@
       });
     }
 
-    // Regional Hotspots Datasets
     const regionalHotspots = {
       indonesia: {
         name: "Indonesia",
@@ -419,6 +467,7 @@
     function jumpToHotspot(lat, lng, zoom) {
       map.flyTo([lat, lng], zoom);
       setTimeout(() => evaluateCoordinates(lat, lng), 1200);
+      if(window.innerWidth <= 768 && !isPanelMinimized) toggleMobilePanel();
     }
 
     function getDistance(lat1, lon1, lat2, lon2) {
@@ -548,6 +597,7 @@
         const lat = e.latlng.lat.toFixed(4);
         const lng = e.latlng.lng.toFixed(4);
         evaluateCoordinates(lat, lng);
+        if(window.innerWidth <= 768 && !isPanelMinimized) toggleMobilePanel();
       }, 400);
     });
 
