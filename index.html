@@ -42,7 +42,8 @@
     .search-box button:hover { background: #0ea5e9; }
 
     .hotspots-section { margin-bottom: 10px; background: rgba(56, 189, 248, 0.08); padding: 8px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2); }
-    .hotspots-section h4 { font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .hotspots-section h4 { font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
+    .region-tag { background: #38bdf8; color: #0f172a; padding: 1px 5px; border-radius: 4px; font-size: 0.6rem; font-weight: bold; }
     .hotspot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
     .hotspot-btn { 
       background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); 
@@ -66,7 +67,6 @@
     .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
     .metric-badge { background: rgba(0,0,0,0.4); padding: 5px; border-radius: 5px; font-size: 0.68rem; color: #facc15; font-weight: bold; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
     
-    /* Investment Calculator Box */
     .calc-box { margin-top: 10px; background: rgba(74, 222, 128, 0.08); padding: 8px; border-radius: 8px; border: 1px solid rgba(74, 222, 128, 0.2); }
     .calc-box h4 { font-size: 0.72rem; color: #4ade80; text-transform: uppercase; margin-bottom: 5px; }
     .calc-input-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
@@ -74,7 +74,6 @@
     .calc-input-row input { flex: 1; padding: 4px 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: white; font-size: 0.75rem; }
     .calc-result { font-size: 0.75rem; color: #f8fafc; font-weight: bold; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 5px; margin-top: 4px; }
 
-    /* Modal Styling */
     .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; }
     .modal-content { background: #0f172a; color: #f8fafc; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #38bdf8; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
     .modal-content h3 { color: #38bdf8; margin-bottom: 8px; font-size: 1rem; }
@@ -90,16 +89,15 @@
 </head>
 <body>
 
-  <!-- Tutorial Modal -->
   <div id="tutorial-modal" class="modal" style="display: flex;">
     <div class="modal-content">
       <h3>📖 Quick User Guide</h3>
-      <p>Welcome to the 4-Year Land Prospect AI. Here is how to navigate like a pro investor:</p>
+      <p>Welcome to the Global Land Prospect AI. Master the map anywhere on Earth:</p>
       <ul>
-        <li><b>Tap the Map:</b> Click anywhere globally to analyze a 1.2km walking catchment radius.</li>
+        <li><b>Pan & Explore:</b> Move the map anywhere in the world—the Hotspots box updates automatically to match your region!</li>
+        <li><b>Tap the Map:</b> Click any location to calculate a 1.2km walking catchment analysis.</li>
         <li><b>Color Codes:</b> <span style="color:#4ade80">Green</span> = High Growth (>75%), <span style="color:#facc15">Yellow</span> = Moderate (50-75%), <span style="color:#f87171">Red</span> = Low/Risky (&lt;50%).</li>
-        <li><b>Sliders:</b> Customize how much weight the AI gives to transit, shops, or amenities.</li>
-        <li><b>Currency & ROI:</b> Type your local purchase price to instantly estimate your 4-year return!</li>
+        <li><b>Currency & ROI:</b> Change currency and input local prices to calculate 4-year financial returns.</li>
       </ul>
       <button class="close-modal" onclick="closeTutorial()">Got It!</button>
     </div>
@@ -107,13 +105,13 @@
 
   <div class="panel">
     <div class="header-row">
-      <h2>4-Year Land Prospect AI</h2>
+      <h2>Global Land Prospect AI</h2>
       <button class="help-btn" onclick="openTutorial()" title="Help Guide">?</button>
     </div>
-    <p>Global GIS Analyzer with Financial ROI Projection.</p>
+    <p>Region-Aware GIS Analyzer with Financial ROI Projection.</p>
 
     <div class="search-box">
-      <input type="text" id="search-input" placeholder="Search city..." onkeydown="if(event.key === 'Enter') searchLocation()">
+      <input type="text" id="search-input" placeholder="Search city globally..." onkeydown="if(event.key === 'Enter') searchLocation()">
       <select id="currency-select" onchange="updateCalculations()">
         <option value="USD">USD ($)</option>
         <option value="IDR">IDR (Rp)</option>
@@ -124,13 +122,11 @@
       <button onclick="searchLocation()">Go</button>
     </div>
 
+    <!-- Dynamic Regional Hotspots Drawer -->
     <div class="hotspots-section">
-      <h4>🔥 Top 4 Undervalued Growth Hotspots</h4>
-      <div class="hotspot-grid">
-        <button class="hotspot-btn" onclick="jumpToHotspot(-6.1856, 106.9483, 14)">1. Cakung (JKT)</button>
-        <button class="hotspot-btn" onclick="jumpToHotspot(-6.3227, 107.1472, 14)">2. Cikarang (BKS)</button>
-        <button class="hotspot-btn" onclick="jumpToHotspot(-6.3034, 106.6542, 14)">3. BSD (TNG)</button>
-        <button class="hotspot-btn" onclick="jumpToHotspot(-7.5561, 110.8522, 14)">4. Jebres (SOLO)</button>
+      <h4>🔥 Top Growth Hotspots <span class="region-tag" id="current-region-tag">Indonesia</span></h4>
+      <div class="hotspot-grid" id="hotspots-container">
+        <!-- Dynamically injected via JavaScript based on map position -->
       </div>
     </div>
     
@@ -159,7 +155,6 @@
         <div class="metric-badge" id="metric-elev">⛰️ Flood Risk: --</div>
       </div>
 
-      <!-- Financial Investment Calculator -->
       <div class="calc-box">
         <h4>💰 4-Year ROI Estimator</h4>
         <div class="calc-input-row">
@@ -196,6 +191,82 @@
     let clickTimeout = null;
     let currentScore = 0;
 
+    // Regional Hotspots Datasets
+    const regionalHotspots = {
+      indonesia: {
+        name: "Indonesia",
+        currency: "IDR",
+        spots: [
+          { name: "1. Cakung (JKT)", lat: -6.1856, lng: 106.9483, zoom: 14 },
+          { name: "2. Cikarang (BKS)", lat: -6.3227, lng: 107.1472, zoom: 14 },
+          { name: "3. BSD (TNG)", lat: -6.3034, lng: 106.6542, zoom: 14 },
+          { name: "4. Jebres (SOLO)", lat: -7.5561, lng: 110.8522, zoom: 14 }
+        ]
+      },
+      usa: {
+        name: "United States",
+        currency: "USD",
+        spots: [
+          { name: "1. Austin (TX)", lat: 30.2672, lng: -97.7431, zoom: 13 },
+          { name: "2. Charlotte (NC)", lat: 35.2271, lng: -80.8431, zoom: 13 },
+          { name: "3. Tampa (FL)", lat: 27.9506, lng: -82.4572, zoom: 13 },
+          { name: "4. Phoenix (AZ)", lat: 33.4484, lng: -112.0740, zoom: 13 }
+        ]
+      },
+      europe: {
+        name: "Europe",
+        currency: "EUR",
+        spots: [
+          { name: "1. Valencia (ES)", lat: 39.4699, lng: -0.3763, zoom: 13 },
+          { name: "2. Warsaw (PL)", lat: 52.2297, lng: 21.0122, zoom: 13 },
+          { name: "3. Porto (PT)", lat: 41.1579, lng: -8.6291, zoom: 13 },
+          { name: "4. Manchester (UK)", lat: 53.4808, lng: -2.2426, zoom: 13 }
+        ]
+      },
+      global: {
+        name: "Global Hubs",
+        currency: "USD",
+        spots: [
+          { name: "1. Tokyo (JP)", lat: 35.6762, lng: 139.6503, zoom: 13 },
+          { name: "2. Singapore", lat: 1.3521, lng: 103.8198, zoom: 13 },
+          { name: "3. Dubai (UAE)", lat: 25.2048, lng: 55.2708, zoom: 13 },
+          { name: "4. Sydney (AU)", lat: -33.8688, lng: 151.2093, zoom: 13 }
+        ]
+      }
+    };
+
+    function updateHotspotsUI(regionKey) {
+      const reg = regionalHotspots[regionKey];
+      document.getElementById('current-region-tag').innerText = reg.name;
+      const container = document.getElementById('hotspots-container');
+      container.innerHTML = '';
+      reg.spots.forEach(spot => {
+        const btn = document.createElement('button');
+        btn.className = 'hotspot-btn';
+        btn.innerText = spot.name;
+        btn.onclick = () => jumpToHotspot(spot.lat, spot.lng, spot.zoom);
+        container.appendChild(btn);
+      });
+    }
+
+    // Detect region based on map center coordinates
+    function checkMapRegion() {
+      const center = map.getCenter();
+      let regionKey = 'global';
+      if (center.lat >= -11 && center.lat <= 6 && center.lng >= 95 && center.lng <= 141) {
+        regionKey = 'indonesia';
+      } else if (center.lat >= 24 && center.lat <= 50 && center.lng >= -125 && center.lng <= -66) {
+        regionKey = 'usa';
+      } else if (center.lat >= 35 && center.lat <= 65 && center.lng >= -10 && center.lng <= 40) {
+        regionKey = 'europe';
+      }
+      updateHotspotsUI(regionKey);
+    }
+
+    map.on('moveend', checkMapRegion);
+    // Initialize default
+    updateHotspotsUI('indonesia');
+
     function openTutorial() { document.getElementById('tutorial-modal').style.display = 'flex'; }
     function closeTutorial() { document.getElementById('tutorial-modal').style.display = 'none'; }
 
@@ -209,7 +280,6 @@
         return;
       }
 
-      // Projected 4-year appreciation multiplier based on AI score (e.g. 80% score = ~32% growth over 4 years)
       const growthRate = (currentScore / 100) * 0.40; 
       const futureValue = price * (1 + growthRate);
       const netProfit = futureValue - price;
@@ -226,7 +296,7 @@
         const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
         const data = await res.json();
         if (data && data.length > 0) {
-          map.flyTo([parseFloat(data[0].lat), parseFloat(data[0].lon)], 14);
+          map.flyTo([parseFloat(data[0].lat), parseFloat(data[0].lon)], 13);
           document.getElementById('search-input').value = query;
         } else {
           alert("Location not found.");
