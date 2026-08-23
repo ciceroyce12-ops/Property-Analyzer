@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Global Land Prospect Analyzer 2030</title>
   
-  <!-- Leaflet GIS Map CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   
   <style>
@@ -13,20 +12,11 @@
     body, html { height: 100%; width: 100%; overflow: hidden; }
     #map { height: 100vh; width: 100vw; z-index: 1; }
     
-    /* Responsive Floating Sidebar */
     .panel {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      z-index: 1000;
-      background: rgba(15, 23, 42, 0.92);
-      color: #f8fafc;
-      padding: 18px;
-      border-radius: 14px;
-      width: 320px;
-      max-width: 90vw;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-      backdrop-filter: blur(10px);
+      position: absolute; top: 15px; left: 15px; z-index: 1000;
+      background: rgba(15, 23, 42, 0.92); color: #f8fafc;
+      padding: 18px; border-radius: 14px; width: 320px; max-width: 90vw;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4); backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.12);
     }
     .panel h2 { font-size: 1.1rem; margin-bottom: 4px; color: #38bdf8; }
@@ -37,52 +27,48 @@
     .slider-group input { width: 100%; accent-color: #38bdf8; cursor: pointer; }
     
     .stats-card {
-      margin-top: 15px;
-      background: rgba(255,255,255,0.06);
-      padding: 12px;
-      border-radius: 10px;
-      border-left: 4px solid #38bdf8;
+      margin-top: 15px; background: rgba(255,255,255,0.06);
+      padding: 12px; border-radius: 10px; border-left: 4px solid #38bdf8;
     }
     .stats-card h3 { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
     .score-display { font-size: 2rem; font-weight: 800; color: #4ade80; margin: 2px 0; }
-    .location-details { font-size: 0.75rem; color: #cbd5e1; }
+    .location-details { font-size: 0.75rem; color: #cbd5e1; margin-bottom: 4px; }
+    .live-data { font-size: 0.7rem; color: #facc15; font-weight: bold; }
   </style>
 </head>
 <body>
 
   <div class="panel">
     <h2>4-Year Land Prospect AI</h2>
-    <p>Click anywhere on the map to calculate future value appreciation score.</p>
+    <p>Click map to fetch live transit & elevation data for valuation.</p>
     
     <div class="slider-group">
-      <label>Transit Infrastructure <span id="val-transit">70%</span></label>
+      <label>Transit Impact <span id="val-transit">70%</span></label>
       <input type="range" id="weight-transit" min="0" max="100" value="70">
     </div>
     <div class="slider-group">
-      <label>Commercial Zoning Density <span id="val-zoning">80%</span></label>
+      <label>Commercial Zoning (Est) <span id="val-zoning">80%</span></label>
       <input type="range" id="weight-zoning" min="0" max="100" value="80">
     </div>
     <div class="slider-group">
-      <label>Population Growth Inflow <span id="val-inflow">65%</span></label>
+      <label>Population Growth (Est) <span id="val-inflow">65%</span></label>
       <input type="range" id="weight-inflow" min="0" max="100" value="65">
     </div>
 
     <div class="stats-card">
-      <h3>4-Yr Appreciation Potential</h3>
+      <h3>Appreciation Potential</h3>
       <div class="score-display" id="prospect-score">-- %</div>
-      <div class="location-details" id="location-info">Click map coordinates to evaluate</div>
+      <div class="location-details" id="location-info">Awaiting coordinates...</div>
+      <div class="live-data" id="live-metrics"></div>
     </div>
   </div>
 
   <div id="map"></div>
 
-  <!-- Leaflet GIS Map JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // 1. Initialize Map (Default centered near Jakarta)
     const map = L.map('map').setView([-6.2088, 106.8456], 11);
 
-    // 2. High-Tech Dark Base Layer
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap &copy; CARTO',
       maxZoom: 19
@@ -90,53 +76,79 @@
 
     let activeMarker = null;
 
-    // 3. Score Calculation Algorithm
-    function calculateProspect(lat, lng) {
-      const wTransit = parseInt(document.getElementById('weight-transit').value);
-      const wZoning = parseInt(document.getElementById('weight-zoning').value);
-      const wInflow = parseInt(document.getElementById('weight-inflow').value);
+    // Async function to fetch real environmental and infrastructure data
+    async function calculateRealProspect(lat, lng) {
+      try {
+        // 1. Fetch Elevation Data (Proxy for flood risk)
+        const elRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`);
+        const elData = await elRes.json();
+        const elevation = elData.elevation[0] || 0;
 
-      // Algorithmic seed calculation from coordinates
-      const spatialFactor = Math.abs(Math.sin(lat * 12.9898 + lng * 78.233) * 43758.5453) % 1;
-      const baseValue = (spatialFactor * 40);
-      const weightedSliders = (wTransit * 0.25) + (wZoning * 0.20) + (wInflow * 0.15);
-      
-      return Math.min(Math.round(baseValue + weightedSliders), 98);
+        // 2. Fetch Transit Data (Overpass API - nodes within 1km)
+        const query = `[out:json];node["public_transport"](around:1000, ${lat}, ${lng});out count;`;
+        const transitRes = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        const transitData = await transitRes.json();
+        const transitStops = parseInt(transitData.elements[0]?.tags?.nodes) || 0;
+
+        // 3. User Weights
+        const wTransit = parseInt(document.getElementById('weight-transit').value) / 100;
+        const wZoning = parseInt(document.getElementById('weight-zoning').value) / 100;
+        const wInflow = parseInt(document.getElementById('weight-inflow').value) / 100;
+
+        // 4. Algorithm Calculation
+        // Cap transit score at 20 stops nearby for 100% transit score
+        const realTransitScore = Math.min((transitStops / 20) * 100, 100); 
+        
+        // If elevation is under 5m, heavy penalty (high flood risk by 2030)
+        const floodPenalty = elevation < 5 ? 25 : (elevation < 10 ? 10 : 0);
+
+        // Calculate base (using static values for zoning/inflow as fallbacks since we lack global APIs for them)
+        const baseScore = (realTransitScore * wTransit) + (75 * wZoning) + (65 * wInflow);
+        
+        // Final normalized score minus penalties
+        const finalScore = Math.max(0, Math.min(Math.round(baseScore - floodPenalty), 98));
+
+        return { score: finalScore, elevation, transitStops };
+
+      } catch (error) {
+        console.error("API Error:", error);
+        return { score: 'ERR', elevation: '?', transitStops: '?' };
+      }
     }
 
-    // 4. Map Click Evaluation Event
-    map.on('click', function(e) {
+    map.on('click', async function(e) {
       const lat = e.latlng.lat.toFixed(4);
       const lng = e.latlng.lng.toFixed(4);
-      const score = calculateProspect(lat, lng);
+      
+      // Loading State
+      document.getElementById('prospect-score').innerText = 'Calc...';
+      document.getElementById('prospect-score').style.color = '#94a3b8';
+      document.getElementById('location-info').innerText = `Coords: ${lat}, ${lng}`;
+      document.getElementById('live-metrics').innerText = 'Fetching satellite/GIS data...';
 
       if (activeMarker) map.removeLayer(activeMarker);
 
-      // Dynamic Color Rating
-      const badgeColor = score > 75 ? '#4ade80' : score > 50 ? '#facc15' : '#f87171';
+      // Fetch Data
+      const data = await calculateRealProspect(lat, lng);
+
+      // Update UI
+      const badgeColor = data.score > 75 ? '#4ade80' : data.score > 50 ? '#facc15' : '#f87171';
+      
+      document.getElementById('prospect-score').innerText = data.score + '%';
+      document.getElementById('prospect-score').style.color = badgeColor;
+      
+      document.getElementById('live-metrics').innerText = 
+        `🚉 Transit Nodes (1km): ${data.transitStops} | ⛰️ Elev: ${data.elevation}m`;
 
       activeMarker = L.circleMarker(e.latlng, {
-        radius: 12,
-        fillColor: badgeColor,
-        color: '#ffffff',
-        weight: 2,
-        fillOpacity: 0.85
+        radius: 12, fillColor: badgeColor, color: '#ffffff', weight: 2, fillOpacity: 0.85
       }).addTo(map);
-
-      // Update Dashboard Overlay
-      const scoreElement = document.getElementById('prospect-score');
-      scoreElement.innerText = score + '%';
-      scoreElement.style.color = badgeColor;
-      document.getElementById('location-info').innerText = `Coords: ${lat}, ${lng}`;
     });
 
-    // 5. Real-Time Slider Sync
     ['transit', 'zoning', 'inflow'].forEach(id => {
       const slider = document.getElementById(`weight-${id}`);
       const label = document.getElementById(`val-${id}`);
-      slider.addEventListener('input', () => {
-        label.innerText = slider.value + '%';
-      });
+      slider.addEventListener('input', () => label.innerText = slider.value + '%');
     });
   </script>
 </body>
